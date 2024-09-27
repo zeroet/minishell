@@ -6,7 +6,7 @@
 /*   By: seyun <seyun@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/11/17 21:43:23 by seyun             #+#    #+#             */
-/*   Updated: 2022/02/26 13:51:50 by seyun            ###   ########.fr       */
+/*   Updated: 2022/02/06 18:04:30 by seyun            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,7 @@ void		ft_putchar_fd(char c, int fd);
 void		ft_putendl_fd(char *s, int fd);
 void		ft_putnbr_fd(int n, int fd);
 void		ft_putstr_fd(char *s, int fd);
-char		**ft_split(char *s, char *c);
+char		**ft_split(char const *s, char c);
 char		*ft_strchr(const char *s, int c);
 char		*ft_strdup(const char *ptr);
 char		*ft_strjoin(char const *s1, char const *s2);

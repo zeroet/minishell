@@ -3,78 +3,59 @@
 /*                                                        :::      ::::::::   */
 /*   env_create.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: seyun <seyun@student.42.fr>                +#+  +:+       +#+        */
+/*   By: eyoo <eyoo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/02/01 22:11:32 by seyun             #+#    #+#             */
-/*   Updated: 2022/02/13 14:56:49 by seyun            ###   ########.fr       */
-/*   Updated: 2022/02/02 09:22:33 by seyun            ###   ########.fr       */
+/*   Created: 2022/02/23 23:48:12 by eyoo              #+#    #+#             */
+/*   Updated: 2022/02/24 18:35:47 by eyoo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/minishell.h"
 
-int	find_same_char(char *str, char c)
+int		has_equal(char *line)
 {
-	int i;
+	int	i;
 
 	i = 0;
-	while (str[i])
+	while (line[i])
 	{
-		if (str[i] == c)
-			return (i);
+		if (line[i] == '=')
+			return (1);
 		i++;
 	}
 	return (0);
 }
 
-void	set_name_value(t_env *new)
+int		ft_env(char **envp, int fd)
 {
-	int i;
+	int	i;
 
 	i = 0;
-	i = find_same_char(new->origin, '=');
-	if (i == 0)
-		ft_strexit("ERROR: PATH start '='\n");
-	new->name = ft_substr(new->origin, 0, i);
-	new->value = ft_substr(new->origin, i+1, ft_strlen(new->origin) - i);
-	if (!new->name || !new->value)
-		ft_strexit("ERROR: Evnp (new->name/new->value)\n");
+	while (envp[i])
+	{
+		if (has_equal(envp[i]))
+		{
+			ft_putstr_fd(envp[i], fd);
+			ft_putchar_fd('\n', fd);
+		}
+		i++;
+	}
+	return (1);
 }
 
-t_env	*new_env(void)
+char	**copy_envp(char **envs)
 {
-	t_env *new;
-
-	new = (t_env *)malloc(sizeof(t_env));
-	if (new == NULL)
-		return (NULL);
-	new->origin = NULL;
-	new->name = NULL;
-	new->value = NULL;
-	return (new);
-}
-
-// t_list *env 연결리스트안에 struct new 환경변수 이름/PATH를 받기위한 함수
-// tmp 리스트 임시보관 후 ret로 env 에 전달
-
-void	get_env(char **envp, t_list **env)
-{
-	t_env	*new;
-	t_list	*tmp;
-	t_list	*ret;
+	char	**new;
 	int		i;
 
 	i = 0;
-	tmp = NULL;
-	ret = tmp;
-	while (envp[i] != '\0')
-	{	
-		new = new_env();
-		new->origin = ft_strdup(envp[i]);
-		tmp = ft_lstnew(new);
-		set_name_value(new);
-		ft_lstadd_back(&ret, tmp);
+	while (envs[i])
 		i++;
-	}
-	*(env) = ret;
+	if (!(new = malloc(sizeof(char *) * (i + 1))))
+		return (NULL);
+	i = -1;
+	while (envs[++i])
+		new[i] = ft_strdup(envs[i]);
+	new[i] = NULL;
+	return (new);
 }

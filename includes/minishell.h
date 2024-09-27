@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: seyun <marvin@42.fr>                       +#+  +:+       +#+        */
+/*   By: eyoo <eyoo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/01/31 15:06:29 by seyun             #+#    #+#             */
-/*   Updated: 2022/02/26 13:45:28 by seyun            ###   ########.fr       */
+/*   Created: 2022/02/23 23:39:06 by eyoo              #+#    #+#             */
+/*   Updated: 2022/03/02 02:15:04 by eyoo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,128 +17,99 @@
 #include <stdio.h>
 #include <readline/history.h>
 #include <readline/readline.h>
-#include <sys/stat.h>
 #include <stdlib.h>
 #include <signal.h>
 #include "../libft/libft.h"
 #include <termios.h>
 
-# define T_NULL 0
-# define T_WORD 1
-# define T_PIPE 2
-# define T_REDIRECT 3
-# define T_DOUBLE_QUOTES 4
-# define T_SINGLE_QUOTES 5
+# define STDIN 			0
+# define STDOUT 		1
+# define STDERR 		2
 
+extern int g_exit;
 
-typedef struct s_token
+typedef struct	s_err
 {
-	int type;
-	char *str;
-}		t_token;
+	int				errcode;
+	int				errindex;
+	char			*errtoken;
+}				t_err;
 
-typedef struct s_token_info
+typedef struct	s_token
 {
-	int count;
-	t_token *tokens;
-}	t_token_info;
+	char		*cmd;
+	char		redir_flag;
+}				t_token;
 
-typedef struct s_env
+typedef struct	s_cmd
 {
-	char *origin;
-	char *name;
-	char *value;
-}		t_env;
+	t_token			*cmdline;
+	int				pipe_flag;
+	int				exit_flag;
+	int				right_flag;
+	char			quote;
+	char			*(redirect_filename[4]);
+	//index 0 : left redirect char (<, <<);
+	//index 1 : left redirect filename;
+	//index 2 : righ redirect char (>, >>);
+	//index 3 : righ redirect filename;
+	struct s_err	err_manage;
+	struct s_cmd	*next;
+}				t_cmd;
 
-#define AST_PIPE 1
-#define AST_CMD 2
-#define AST_SIMPLE_CMD 3
-#define AST_REDIRECT 4
-#define AST_IO_REDIRCT 5
-
-typedef struct s_ast_tree
+typedef struct s_split
 {
-	int		type;
-	void	*data;
-	struct s_ast_tree *left;
-	struct s_ast_tree *right;
-} t_ast;
+	int	count;
+	int begin;
+	int	quote;
+	int redirec;
 
-typedef struct s_simple_cmd
-{
-	char *original;
-	char *file_path;
-	char **argv;
-}	t_simple_cmd;
+}		t_split;
 
-# define INPUT 1
-# define OUTPUT 2
-# define HERE_DOCUMENTS 3
-# define APPENDING_OUTPUT 4
+//main.c
+t_cmd		*ft_new(char *line, int pipe, char **envp, int exit);
+int			check_whitespace(char *line);
 
-typedef struct s_redirect
-{
-	int type;
-	char *filename;
-}	t_redirect;
-
-/* --------------- parse ----------------------*/
-
-void	get_env(char **envp, t_list **env);
-
-void	parse(t_list *env, char *line);
-int		double_quote(char *line, int i);
-int		single_quote(char *line, int i);
-int		check_end_quote(char *line, int i, t_token *token);
-void	counting_while(char *line, int *i, int *count);
-int		counting_token(char *line);
-
+//signal.c
 void	set_signal(void);
+void	handler(int signum);
 
-int		tokenizer(char *line, t_token_info *token_info);
+// parse.c
+void	parse(t_cmd **cmd_list, char *line, char **envp);
+void	add_new(t_cmd **cmd_list, t_cmd **new, t_cmd **tmp, int start);
+void	check_pipe(char *line, int pipe, int i);
+void	check_quote(char *line, int quote, int i);
+void	init_flag(int *i, int *start, int *pipe, int *quote);
 
-t_token *split_token(char *line, int count, t_token *tokens);
+// env_create.c
+char	**copy_envp(char **envs);
+int		ft_env(char **envp, int fd);
+int		has_equal(char *line);
 
-void	convert_env(t_token_info *token_info, t_list *env);
-char		*expand(char *line, int idx, t_list *env);
-void	set_new_str(char *new_line, char *substr1, char *env_value, char *substr2);
-int		find_dollar(char *str);
-int		find_end_dollar(char *str, int idx);
-char	*is_env(t_list *env, char *name);
+//cmd_split.c
+t_token	*cmd_split(char const *s, char c);
+int		split_line(char const *s, const char c);
+void	condition_count(t_split *info, char const *s, const char c, int *count);
+void	get_count(int *redirec, int *count, int *begin, int begin_flag);
+void	put_quote_flag(char const *s, int *quote);
 
-void	set_token_type(t_token_info *token_info);
+//token_word.c
+char	*token_word(int *idx, char const *s, const char c);
+int		ft_word_len(char const *s, const char c);
+int		conditoion_word_len(char const *s, const char c, int *len, t_split *info);
+void	*ft_free(t_token *tokens, int len);
 
-int		syntax_analyser(const t_token_info tokens, t_ast **root);
-int		pipeline_check(t_token_info tokens, int idx);
-int		cmd_check(t_token_info tokens, int idx);
-int		io_redirect_check(t_token_info tokens, int idx);
-int		redirect_check(t_token_info tokens, int idx);
-int		simple_cmd_check(t_token_info tokens, int idx);
+//set_token.c
+t_token		*set_token(t_token *token, char **envp);
+int		get_parse_size(char *str, char **envp);
+int		double_quote_size(char *str, int *size, char **envp);
+int		single_quote_size(char *str, int *size);
+int		unclosed_quote(char *str, char quote);
 
+//env_size.c
+int		env_size(char *str, int *size, char **envp);
+int		env_key_size(char *str);
+int		env_value_size(char *str, int size, char **envp);
 
-
-int	redirect_type(char *str);
-t_ast *new_ast(void *item, int type);
-int	add_simple_cmd_argv(t_token_info tokens, t_simple_cmd *simple_cmd, int idx);
-int	set_syntax_io_redirect(t_token_info tokens, int idx, t_ast **node);
-int set_syntax_redirects(t_token_info tokens, int idx, t_ast **node);
-int	set_syntax_cmd(t_token_info tokens, int idx, t_ast **node);
-int set_syntax_pipeline(t_token_info tokens, int idx, t_ast **node);
-int	set_syntax_simple_cmd(t_token_info tokens, int idx, t_ast **node);
-int	set_syntax_argv(t_token_info tokens, int idx, char **args, int depth);
-
-//pwd 
-char *get_curr_path(void);
-
-
-//full_path
-void	set_path_simple_cmd(t_list *env, t_simple_cmd *simple_cmd);
-char	*get_full_path(t_list *env, char *cmd);
-void	set_path_in_tree(t_list *env, t_ast *node);
-char *get_full_path_by_env(t_list *env, char *filename);
-t_env	*find_env_key(t_list *env, char *env_name);
-char	*get_env_value(t_list *env, char *env_name);
-void	free_double_char(char **lines);
-char	**get_env_path(t_list *env);
 
 #endif

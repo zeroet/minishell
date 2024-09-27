@@ -3,85 +3,83 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: seyun <marvin@42.fr>                       +#+  +:+       +#+        */
+/*   By: eyoo <eyoo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/01/31 14:58:28 by seyun             #+#    #+#             */
-/*   Updated: 2022/02/28 21:35:21 by eyoo             ###   ########.fr       */
+/*   Created: 2022/02/23 23:29:27 by eyoo              #+#    #+#             */
+/*   Updated: 2022/03/02 02:11:54 by eyoo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/minishell.h"
 
-int	check_pipe(char *line)
-{
-	int	i;
-	int	ret;
+int	g_exit = 0;
 
-	ret = 0;
-	i = -1;
-	while (line[++i] != '\0')
+int			check_whitespace(char *line)
+{
+	int		i;
+
+	i = 0;
+	while (line[i] != '\0')
 	{
-		if (line[i] == '|' && line[i - 1] && line[i - 1] != ' ')
-			ret++;
-		if (line[i] == '|' && line[i + 1] && line[i + 1] != ' ')
-			ret++;
+		if (line[i] != 32 && !(line[i] >= 9 && line[i] <= 13))
+			return (0);
+		i++;
 	}
-	return (ret);
+	return (1);
 }
 
-char	*set_pipe_str(char *line)
+t_cmd			*ft_new(char *line, int pipe, char **envp, int exit)
 {
-	char *new_line;
-	int	i;
-	int	j;
-	int	size_str;
+	t_cmd		*result;
 
-	if (line == 0)
-		return (0);
-	j = 0;
-	i = -1;
-	size_str = (int)ft_strlen(line) + check_pipe(line);
-	new_line = (char *)malloc(sizeof(char) * (size_str + 1));;
-	while (++i < size_str)
-	{
-		if ((line[j + 1] && line[j + 1] == '|' && line[j] != ' ')
-			|| (line[j] == '|' && line[j + 1] && line[j + 1] != ' '))
-		{
-			new_line[i++] = line[j++];
-			new_line[i] = ' ';
-		}
-		else
-			new_line[i] = line[j++];
-	}
-	new_line[i] = '\0';
-	free(line);
-	return (new_line);
+	if (!(result = (t_cmd*)malloc(sizeof(t_cmd))))
+		return (NULL);
+	(void)line;
+	(void)envp;
+	result->cmdline = cmd_split(line, ' ');
+	set_token(result->cmdline, envp);
+	result->pipe_flag = pipe;
+	if (exit == 0 && pipe == 0)
+		result->exit_flag = 1;
+	else
+		result->exit_flag = 0;
+	result->err_manage.errcode = 0;
+	result->err_manage.errindex = 0;
+	result->err_manage.errtoken = NULL;
+	result->next = NULL;
+	return (result);
 }
 
-int main(int ac, char **av, char **envp)
+int				main(int argc, char **argv, char **envp)
 {
-	char *line;
-	t_list *env;
-
-	if (ac || av)
-		;
+	char		*line;
+	t_cmd		*cmd_list;
+	char		**env;
+	int i = 0;
+//	dup2(STDIN, 100); // fd가 가리키는 기능을 변경하는 함수입니다. 표준입출력에 해당하는 fd를 100, 101에 백업합니다.
+//	dup2(STDOUT, 101);
+	argc = 1;
+	(void)argv;
+	env = copy_envp(envp);
+	while(env[i])
+	{
+		printf("%s\n", env[i]);
+		i++;
+	}
 	set_signal();
-	get_env(envp, &env);
-	while (1)
+	while ((line = readline("minishell $ ")))
 	{
-		line = readline("minishell > ");
-		if (!line) //바쉬와 동일하게 출력. 개행방지
-		{	
-			printf("\033[1A");//ANSI control sequences 커서한칸위로
-            printf("\033[12C");//커서 12칸 앞으로   
-			printf("exit\n");
-			exit(-1);
+		if (*line != '\0' && !check_whitespace(line)) // 프롬프트상에서 입력된 문자가 null이거나 모두 white_space일 때는 밑의 로직을 생략합니다.
+		{
+			add_history(line);
+			parse(&cmd_list, line, env); // 입력된 문자열을 먹기좋게 파싱합니다.
+	//		g_exit = exec(cmd_list, argv, &env); // 파싱된 명령어 및 문자열을 실행합니다.
+	//		free_list(cmd_list); // 파싱된 데이터가 들어있는 list를 해제시켜줍니다.
 		}
-		else if (line)
-			parse(env, line);
-		add_history(line);
-		free(line);
-		line = NULL;
+		free(line); // readline으로 할당한 line을 해제시켜줍니다.
 	}
+	ft_putstr_fd("\x1b[1A", STDOUT);
+ 	ft_putstr_fd("\033[12C",STDOUT);
+ 	ft_putstr_fd("exit\n", STDOUT);
 	return (0);
 }

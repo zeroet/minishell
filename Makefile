@@ -6,7 +6,7 @@
 #    By: seyun <marvin@42.fr>                       +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/01/31 16:49:41 by seyun             #+#    #+#              #
-#    Updated: 2022/02/26 13:45:57 by seyun            ###   ########.fr        #
+#    Updated: 2022/03/02 02:06:31 by eyoo             ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -32,15 +32,18 @@ LINE_CLEAR	=	"\x1b[1A\x1b[M"
 NAME		=	minishell
 
 CC			=	gcc
-CFLAGS		=	-Wall -Werror -Wextra -g3 -fsanitize=address
+CFLAGS		=	-Wall -Werror -Wextra #-g3 -fsanitize=address
 RM			=	rm -f
 
 HEADER		=	./includes/
 LIBFT_A		= 	./Libft/libft.a
 LIBFT_D		=	./Libft/
 RL			=   readline 
-RLL			=	/Users/$(USER)/homebrew/opt/readline/lib 
-RLI			= 	/Users/$(USER)/homebrew/opt/readline/include
+RLL			=	/Users/$(USER)/.brew/opt/readline/lib 
+RLI			= 	/Users/$(USER)/.brew/opt/readline/include
+#RLL			=	/Users/$(USER)/homebrew/opt/readline/lib 
+#RLI			= 	/Users/$(USER)/homebrew/opt/readline/include
+
 
 # =============================================================================
 # File Variables
@@ -50,16 +53,10 @@ FILES 	=	main.c \
 			env_create.c \
 			parse.c \
 			signal.c \
-			split_line.c \
-			expand.c \
-			set_token_type.c \
-			tokenize.c \
-			syntax_analyser.c \
-			set_syntax_tree.c \
-			set_syntax_tree2.c \
-			get_full_path.c \
-			get_env_path.c \
-			pwd.c
+			cmd_split.c\
+			token_word.c\
+			set_token.c\
+			env_size.c\
 
 SRC		=   $(addprefix srcs/, $(FILES))
 OBJ		=	$(SRC:.c=.o)
